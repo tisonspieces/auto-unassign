@@ -18,7 +18,6 @@ jobs:
     name: Auto Unassign
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
       - name: Auto Unassign
         uses: tisonspieces/auto-unassign@main
         with:
