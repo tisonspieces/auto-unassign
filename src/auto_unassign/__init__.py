@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import argparse
+import datetime
 import dateparser
 from githubkit import GitHub
 from githubkit.versions.latest.models import Issue
@@ -22,6 +23,9 @@ def unassign(token, owner, repo, period, dryrun):
     c = GitHub(token)
     dt = dateparser.parse(period, settings={'RETURN_AS_TIMEZONE_AWARE': True})
     print(f'[{owner}/{repo}] Open issues updated before {dt} ({period}) will be considered stale.')
+    if dt > datetime.datetime.now(datetime.timezone.utc):
+        print(f'[{owner}/{repo}] The period is in the future, no issue will be considered stale.')
+        return
 
     for issue in c.paginate(
         c.rest.issues.list_for_repo,
@@ -41,9 +45,7 @@ def unassign(token, owner, repo, period, dryrun):
 
         if len(assignees) > 0 and issue.updated_at < dt:
             print(f'[{owner}/{repo}] Issue {issue.number} is stale, last updated at {issue.updated_at}. Assignees: {assignees}')
-            if dryrun:
-                print(f'[{owner}/{repo}] Dryrun mode, issue {issue.number} would be unassigned.')
-            else:
+            if not dryrun:
                 c.rest.issues.remove_assignees(
                     owner=owner,
                     repo=repo,
