@@ -1,0 +1,52 @@
+# Copyright 2024 tison <wander4096@gmail.com>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: 'Auto Unassign'
+description: 'Auto unassign stale issues and/or pull requests'
+author: 'tison <wander4096@gmail.com>'
+branding:
+  icon: 'check'
+  color: 'green'
+
+inputs:
+  token:
+    description: 'GitHub token'
+    required: true
+    default: ${{ secrets.GITHUB_TOKEN }}
+  repository:
+    description: 'GitHub repository in owner/repo form'
+    required: true
+    default: ${{ github.repository }}
+  period:
+    description: 'Period of inactivity to unassign in days'
+    required: true
+    default: '14 days ago'
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        repository: tisonspieces/auto-unassign
+    - name: Setup PDM
+      uses: pdm-project/setup-pdm@v4
+    - name: Run Auto Unassign
+      shell: bash
+      run: |
+        pdm install
+        pdm run auto-unassign \
+          --token ${{ inputs.token }} \
+          --repo ${{ inputs.repository }} \
+          --period ${{ inputs.period }}

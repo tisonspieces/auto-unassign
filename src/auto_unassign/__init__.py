@@ -21,7 +21,7 @@ from githubkit.versions.latest.models import Issue
 def unassign(token, owner, repo, period, dryrun):
     c = GitHub(token)
     dt = dateparser.parse(period, settings={'RETURN_AS_TIMEZONE_AWARE': True})
-    print(f'Open issues updated before {dt} ({period}) will be considered stale.')
+    print(f'[{owner}/{repo}] Open issues updated before {dt} ({period}) will be considered stale.')
 
     for issue in c.paginate(
         c.rest.issues.list_for_repo,
@@ -40,22 +40,24 @@ def unassign(token, owner, repo, period, dryrun):
             assignees.add(issue.assignee.login)
 
         if len(assignees) > 0 and issue.updated_at < dt:
-            print(f'Issue {issue.number} is stale, last updated at {issue.updated_at}. Assignees: {assignees}')
-            if not dryrun:
+            print(f'[{owner}/{repo}] Issue {issue.number} is stale, last updated at {issue.updated_at}. Assignees: {assignees}')
+            if dryrun:
+                print(f'[{owner}/{repo}] Dryrun mode, issue {issue.number} would be unassigned.')
+            else:
                 c.rest.issues.remove_assignees(
                     owner=owner,
                     repo=repo,
                     issue_number=issue.number,
                     assignees=list(assignees))
-                print(f'Assignees {assignees} of issue {issue.number} is unassigned.')
+                print(f'[{owner}/{repo}] Assignees {assignees} of issue {issue.number} is unassigned.')
 
 
 def main():
     parser = argparse.ArgumentParser(description='Auto unassign stale issues')
     parser.add_argument('--token', help='GitHub token')
-    parser.add_argument('--owner', help='Repository owner', required=True)
     parser.add_argument('--repo', help='Repository name', required=True)
     parser.add_argument('--period', help='Period to consider stale', default='14 days ago')
     parser.add_argument('--dryrun', help='Dryrun mode', action='store_true')
     args = parser.parse_args()
-    unassign(args.token, args.owner, args.repo, args.period, args.dryrun)
+    owner, repo = args.repo.split('/')
+    unassign(args.token, owner, repo, args.period, args.dryrun)
