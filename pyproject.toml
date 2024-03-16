@@ -14,7 +14,7 @@
 
 [project]
 name = "auto-unassign"
-version = "0.1.0"
+version = "0.2.0"
 description = "Default template for PDM package"
 authors = [
     {name = "tison", email = "wander4096@gmail.com"},
