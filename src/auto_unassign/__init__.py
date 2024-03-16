@@ -54,12 +54,22 @@ def unassign(token, owner, repo, period, dryrun):
                 print(f'[{owner}/{repo}] Assignees {assignees} of issue {issue.number} is unassigned.')
 
 
+def strtobool(val):
+    val = val.lower()
+    if val in ('y', 'yes', 't', 'true', 'on', '1'):
+        return True
+    elif val in ('n', 'no', 'f', 'false', 'off', '0'):
+        return False
+    else:
+        raise ValueError("invalid truth value %r" % (val,))
+
+
 def main():
     parser = argparse.ArgumentParser(description='Auto unassign stale issues')
     parser.add_argument('--token', help='GitHub token')
     parser.add_argument('--repo', help='Repository name', required=True)
     parser.add_argument('--period', help='Period to consider stale', default='14 days ago')
-    parser.add_argument('--dryrun', help='Dryrun mode', action='store_true')
+    parser.add_argument('--dryrun', help='Dryrun mode', default=False, type=strtobool)
     args = parser.parse_args()
     owner, repo = args.repo.split('/')
     unassign(args.token, owner, repo, args.period, args.dryrun)

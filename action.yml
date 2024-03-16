@@ -35,7 +35,7 @@ inputs:
   dryrun:
     description: 'Dry run'
     required: false
-    default: false
+    default: 'false'
 
 runs:
   using: composite
@@ -49,26 +49,11 @@ runs:
     - name: Install dependencies
       shell: bash
       run: pdm install
-    - name: Debug
-      shell: bash
-      run: |
-        echo "inputs.repository=${{ inputs.repository }}"
-        echo "inputs.period=${{ inputs.period }}"
-        echo "inputs.dryrun=${{ inputs.dryrun }}"
     - name: Run Auto Unassign (Dry Run)
-      if: ${{ inputs.dryrun }}
       shell: bash
       run: |
         pdm run auto-unassign \
           --token ${{ inputs.token }} \
           --repo ${{ inputs.repository }} \
           --period '${{ inputs.period }}' \
-          --dryrun
-    - name: Run Auto Unassign
-      if: ${{ ! inputs.dryrun }}
-      shell: bash
-      run: |
-        pdm run auto-unassign \
-          --token ${{ inputs.token }} \
-          --repo ${{ inputs.repository }} \
-          --period '${{ inputs.period }}' \
+          --dryrun ${{ inputs.dryrun }}
