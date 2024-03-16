@@ -15,7 +15,8 @@
 name: Auto Unassign
 on:
   schedule:
-    - cron: '* * * * *'
+    - cron: '4 2 * * 1'
+  workflow_dispatch:
 
 permissions:
   contents: read
