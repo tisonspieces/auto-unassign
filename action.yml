@@ -23,7 +23,7 @@ inputs:
   token:
     description: 'GitHub token'
     required: true
-    default: ${{ secrets.GITHUB_TOKEN }}
+    default: ${{ github.token }}
   repository:
     description: 'GitHub repository in owner/repo form'
     required: true
@@ -32,6 +32,10 @@ inputs:
     description: 'Period of inactivity to unassign in days'
     required: true
     default: '14 days ago'
+  dryrun:
+    description: 'Dry run'
+    required: false
+    default: false
 
 runs:
   using: composite
@@ -42,11 +46,29 @@ runs:
         repository: tisonspieces/auto-unassign
     - name: Setup PDM
       uses: pdm-project/setup-pdm@v4
-    - name: Run Auto Unassign
+    - name: Install dependencies
+      shell: bash
+      run: pdm install
+    - name: Debug
       shell: bash
       run: |
-        pdm install
+        echo "inputs.repository=${{ inputs.repository }}"
+        echo "inputs.period=${{ inputs.period }}"
+        echo "inputs.dryrun=${{ inputs.dryrun }}"
+    - name: Run Auto Unassign (Dry Run)
+      if: ${{ inputs.dryrun }}
+      shell: bash
+      run: |
         pdm run auto-unassign \
           --token ${{ inputs.token }} \
           --repo ${{ inputs.repository }} \
-          --period ${{ inputs.period }}
+          --period '${{ inputs.period }}' \
+          --dryrun
+    - name: Run Auto Unassign
+      if: ${{ ! inputs.dryrun }}
+      shell: bash
+      run: |
+        pdm run auto-unassign \
+          --token ${{ inputs.token }} \
+          --repo ${{ inputs.repository }} \
+          --period '${{ inputs.period }}' \
