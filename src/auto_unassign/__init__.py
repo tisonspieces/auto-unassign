@@ -12,5 +12,50 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import argparse
+import dateparser
+from githubkit import GitHub
+from githubkit.versions.latest.models import Issue
+
+
+def unassign(token, owner, repo, period, dryrun):
+    c = GitHub(token)
+    dt = dateparser.parse(period, settings={'RETURN_AS_TIMEZONE_AWARE': True})
+    print(f'Open issues updated before {dt} ({period}) will be considered stale.')
+
+    for issue in c.paginate(
+        c.rest.issues.list_for_repo,
+        owner=owner,
+        repo=repo,
+        state='open',
+        sort='updated',
+        direction='asc'
+    ):
+        issue: Issue
+
+        assignees = set()
+        if issue.assignees is not None:
+            assignees = assignees.union({ assignee.login for assignee in issue.assignees })
+        if issue.assignee is not None:
+            assignees.add(issue.assignee.login)
+
+        if len(assignees) > 0 and issue.updated_at < dt:
+            print(f'Issue {issue.number} is stale, last updated at {issue.updated_at}. Assignees: {assignees}')
+            if not dryrun:
+                c.rest.issues.remove_assignees(
+                    owner=owner,
+                    repo=repo,
+                    issue_number=issue.number,
+                    assignees=list(assignees))
+                print(f'Assignees {assignees} of issue {issue.number} is unassigned.')
+
+
 def main():
-    print(42)
+    parser = argparse.ArgumentParser(description='Auto unassign stale issues')
+    parser.add_argument('--token', help='GitHub token')
+    parser.add_argument('--owner', help='Repository owner', required=True)
+    parser.add_argument('--repo', help='Repository name', required=True)
+    parser.add_argument('--period', help='Period to consider stale', default='14 days ago')
+    parser.add_argument('--dryrun', help='Dryrun mode', action='store_true')
+    args = parser.parse_args()
+    unassign(args.token, args.owner, args.repo, args.period, args.dryrun)
