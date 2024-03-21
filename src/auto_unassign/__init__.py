@@ -14,6 +14,7 @@
 
 import argparse
 import datetime
+
 import dateparser
 from githubkit import GitHub
 from githubkit.versions.latest.models import Issue
@@ -27,24 +28,35 @@ def unassign(token, owner, repo, period, dryrun):
         print(f'[{owner}/{repo}] The period is in the future, no issue will be considered stale.')
         return
 
+    members = set()
+    for member in c.paginate(
+            c.rest.repos.list_collaborators,
+            owner=owner,
+            repo=repo,
+            permission='push',
+    ):
+        members.add(member.login)
+
     for issue in c.paginate(
-        c.rest.issues.list_for_repo,
-        owner=owner,
-        repo=repo,
-        state='open',
-        sort='updated',
-        direction='asc'
+            c.rest.issues.list_for_repo,
+            owner=owner,
+            repo=repo,
+            state='open',
+            sort='updated',
+            direction='asc',
     ):
         issue: Issue
 
         assignees = set()
         if issue.assignees is not None:
-            assignees = assignees.union({ assignee.login for assignee in issue.assignees })
+            assignees = assignees.union({assignee.login for assignee in issue.assignees})
         if issue.assignee is not None:
             assignees.add(issue.assignee.login)
+        assignees = set(filter(lambda assignee: assignee not in members, assignees))
 
         if len(assignees) > 0 and issue.updated_at < dt:
-            print(f'[{owner}/{repo}] Issue {issue.number} is stale, last updated at {issue.updated_at}. Assignees: {assignees}')
+            print(
+                f'[{owner}/{repo}] Issue {issue.number} is stale, last updated at {issue.updated_at}. Assignees: {assignees}')
             if not dryrun:
                 c.rest.issues.remove_assignees(
                     owner=owner,
