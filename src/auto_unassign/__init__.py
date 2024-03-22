@@ -20,7 +20,7 @@ from githubkit import GitHub
 from githubkit.versions.latest.models import Issue
 
 
-def unassign(token, owner, repo, period, dryrun):
+def unassign(token, owner, repo, period, skip_committers, dryrun):
     c = GitHub(token)
     dt = dateparser.parse(period, settings={'RETURN_AS_TIMEZONE_AWARE': True})
     print(f'[{owner}/{repo}] Open issues updated before {dt} ({period}) will be considered stale.')
@@ -53,7 +53,8 @@ def unassign(token, owner, repo, period, dryrun):
             assignees = assignees.union({assignee.login for assignee in issue.assignees})
         if issue.assignee is not None:
             assignees.add(issue.assignee.login)
-        assignees = set(filter(lambda assignee: assignee not in members, assignees))
+        if skip_committers:
+            assignees = set(filter(lambda assignee: assignee not in members, assignees))
 
         if len(assignees) > 0 and issue.updated_at < dt:
             print(
@@ -83,6 +84,11 @@ def main():
     parser.add_argument('--repo', help='Repository name', required=True)
     parser.add_argument('--period', help='Period to consider stale', default='14 days ago')
     parser.add_argument('--dryrun', help='Dryrun mode', default=False, type=strtobool)
+    parser.add_argument(
+        '--skip-committers',
+        help='Skip assignees who have the push permission to the repository',
+        default=True,
+        type=strtobool)
     args = parser.parse_args()
     owner, repo = args.repo.split('/')
-    unassign(args.token, owner, repo, args.period, args.dryrun)
+    unassign(args.token, owner, repo, args.period, args.skip_committers, args.dryrun)

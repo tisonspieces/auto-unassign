@@ -36,6 +36,11 @@ inputs:
     description: 'Dry run'
     required: false
     default: 'false'
+  skip_committers:
+    # The default ${{ github.token }} may not have access to private members.
+    description: 'Skip assignees who have the push permission to the repository'
+    required: false
+    default: 'true'
 
 runs:
   using: composite
@@ -56,4 +61,5 @@ runs:
           --token ${{ inputs.token }} \
           --repo ${{ inputs.repository }} \
           --period '${{ inputs.period }}' \
-          --dryrun ${{ inputs.dryrun }}
+          --dryrun ${{ inputs.dryrun }} \
+          --skip-committers ${{ inputs.skip_committers }}
