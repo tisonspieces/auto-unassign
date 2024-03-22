@@ -36,6 +36,7 @@ def unassign(token, owner, repo, period, dryrun):
             permission='push',
     ):
         members.add(member.login)
+    print(f'[{owner}/{repo}] members ({len(members)}): {members}')
 
     for issue in c.paginate(
             c.rest.issues.list_for_repo,
